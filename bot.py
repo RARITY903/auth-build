@@ -13,6 +13,8 @@ from utils import (
     is_admin, format_error_message, sanitize_input, validate_discord_id
 )
 from logger import log
+import sys
+import importlib.util
 
 EMBED_OK = 0x57F287
 EMBED_ERR = 0xED4245
@@ -1675,8 +1677,12 @@ if __name__ == '__main__':
             threading.Thread(target=_run_discord, daemon=True).start()
             port = int(port_str)
             log.info(f"Starting HTTP API for loader (port {port}) — same process as bot on Railway")
+            # Import auth_api directly to avoid module import issues
+            spec = importlib.util.spec_from_file_location("auth_api", os.path.join(os.path.dirname(__file__), "auth_api.py"))
+            auth_api_module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(auth_api_module)
             uvicorn.run(
-                "auth_api:app",
+                auth_api_module.app,
                 host="0.0.0.0",
                 port=port,
                 log_level="info",
